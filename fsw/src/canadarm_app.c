@@ -115,6 +115,16 @@ void CanadarmAppMain(void)
 
 } /* End of CanadarmAppMain() */
 
+void fillJoints(CanadarmAppJointState_t *_joints, float j0, float j1, float j2, float j3, float j4, float j5, float j6)
+{
+ _joints->joint_0 = j0;
+ _joints->joint_1 = j1;
+ _joints->joint_2 = j2;
+ _joints->joint_3 = j3;
+ _joints->joint_4 = j4;
+ _joints->joint_5 = j5;
+ _joints->joint_6 = j6;      
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  */
 /*                                                                            */
@@ -139,8 +149,7 @@ int32 CanadarmAppInit(void)
     updated_command = false;
 
     // Initialize telemetry data back to ground
-    for(int i = 0; i < 7; ++i)
-      CanadarmAppData.HkTlm.Payload.state.joints[i] = 0.0;
+    fillJoints(&CanadarmAppData.HkTlm.Payload.state, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       
     CanadarmAppData.HkTlm.Payload.is_robot_moving = false;
 
@@ -262,8 +271,6 @@ void CanadarmAppProcessCommandPacket(CFE_SB_Buffer_t *SBBufPtr)
     switch (CFE_SB_MsgIdToValue(MsgId))
     {
         case CANADARM_APP_CMD_MID:
-            OS_printf("Getting APP CMD MID!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! \n");
-
             CanadarmAppProcessGroundCommand(SBBufPtr);
             break;
 
@@ -411,15 +418,14 @@ int32 updateRobotCommand(const CanadarmAppCmd_t *Msg)
 {
                 OS_printf("Updating robot command inside......");
 
-   for(int i = 0; i < 7; ++i)
-      CanadarmAppData.FlightGoal.goal.joints[i] = 0.0;
+    fillJoints(&CanadarmAppData.FlightGoal.goal, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
    
    switch(Msg->pose_id)
    {
      // Open
      case 0:
      {
-        CanadarmAppData.FlightGoal.goal.joints[3]  = -3.1416;
+        fillJoints(&CanadarmAppData.FlightGoal.goal, 0.0, 0.0, 0.0, -3.1416, 0.0, 0.0, 0.0);
      } break;
      // All zeros
      case 1:
@@ -427,13 +433,7 @@ int32 updateRobotCommand(const CanadarmAppCmd_t *Msg)
      // Random
      case 2:
      {
-      CanadarmAppData.FlightGoal.goal.joints[0]  = 1.0;
-      CanadarmAppData.FlightGoal.goal.joints[1]  = -1.5;
-      CanadarmAppData.FlightGoal.goal.joints[2]  = 2.0;
-      CanadarmAppData.FlightGoal.goal.joints[3]  = -3.2;
-      CanadarmAppData.FlightGoal.goal.joints[4]  = 0.8;
-      CanadarmAppData.FlightGoal.goal.joints[5]  = 0.5;
-      CanadarmAppData.FlightGoal.goal.joints[6]  = -1.0;
+        fillJoints(&CanadarmAppData.FlightGoal.goal, 1.0, -1.5, 3.0, -3.2, 0.8, 0.5, -1.0);
 
      } break;       
    }
@@ -454,8 +454,6 @@ void HighRateControLoop(void) {
 
     if (updated_command)    
     {
-                    OS_printf("SENDING FLIGHT GOAL COMMAND!!!!!!!!!!");
-
     CFE_SB_TimeStampMsg(&CanadarmAppData.FlightGoal.TlmHeader.Msg);
     CFE_SB_TransmitMsg(&CanadarmAppData.FlightGoal.TlmHeader.Msg, true);
     updated_command = false;    
@@ -486,8 +484,6 @@ bool CanadarmAppVerifyCmdLength(CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength
     size_t            ActualLength = 0;
     CFE_SB_MsgId_t    MsgId        = CFE_SB_INVALID_MSG_ID;
     CFE_MSG_FcnCode_t FcnCode      = 0;
-
-    printf("CanadarmAppVerifyCmdLength() --\n");
 
     CFE_MSG_GetSize(MsgPtr, &ActualLength);
 

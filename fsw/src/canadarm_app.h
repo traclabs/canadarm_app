@@ -109,6 +109,6 @@ int32 CanadarmAppNoop(const CanadarmAppNoopCmd_t *Msg);
 int32 updateRobotCommand(const CanadarmAppCmd_t *Msg);
 
 bool CanadarmAppVerifyCmdLength(CFE_MSG_Message_t *MsgPtr, size_t ExpectedLength);
-
+void fillJoints(CanadarmAppJointState_t *_joints, float j0, float j1, float j2, float j3, float j4, float j5, float j6);
 
 #endif /* _CANADARM_APP_h_ */

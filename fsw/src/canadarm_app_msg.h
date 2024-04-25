@@ -49,7 +49,13 @@ typedef struct
 
 typedef struct
 {
-  float joints[7];  
+  float joint_0;
+  float joint_1;
+  float joint_2;
+  float joint_3;
+  float joint_4;
+  float joint_5;
+  float joint_6;              
 } CanadarmAppJointState_t;
 
 typedef struct
