@@ -45,6 +45,7 @@ struct robot_state_st{
   CanadarmAppJointState_t state; /**< Twist the robot is currently using **/
   bool is_robot_moving;
 } lastRobotState;
+bool updated_command;
 
 void HighRateControLoop(void);
 
@@ -133,6 +134,9 @@ int32 CanadarmAppInit(void)
     CanadarmAppData.ErrCounter = 0;
     CanadarmAppData.square_counter = 0;
     CanadarmAppData.hk_counter = 0;
+
+    // updated
+    updated_command = false;
 
     // Initialize telemetry data back to ground
     for(int i = 0; i < 7; ++i)
@@ -255,10 +259,11 @@ void CanadarmAppProcessCommandPacket(CFE_SB_Buffer_t *SBBufPtr)
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
 
     CFE_MSG_GetMsgId(&SBBufPtr->Msg, &MsgId);
-    //printf("CanadarmAppProcessCommandPacket() -- we're processing the cmd from MID: 0x%04x\n", CFE_SB_MsgIdToValue(MsgId));
     switch (CFE_SB_MsgIdToValue(MsgId))
     {
         case CANADARM_APP_CMD_MID:
+            OS_printf("Getting APP CMD MID!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! \n");
+
             CanadarmAppProcessGroundCommand(SBBufPtr);
             break;
 
@@ -296,7 +301,7 @@ void CanadarmAppProcessGroundCommand(CFE_SB_Buffer_t *SBBufPtr)
 
     CFE_MSG_GetFcnCode(&SBBufPtr->Msg, &CommandCode);
 
-    printf("CanadarmAppProcessGroundCommand() -- we're getting a ground command...%d\n", CommandCode);
+    OS_printf("CanadarmAppProcessGroundCommand() -- we're getting a ground command...%d\n", CommandCode);
 
     /*
     ** Process "known" canadarm app ground commands
@@ -312,8 +317,9 @@ void CanadarmAppProcessGroundCommand(CFE_SB_Buffer_t *SBBufPtr)
             break;
 
         case CANADARM_APP_MOVE_CC:
-            if (CanadarmAppVerifyCmdLength(&SBBufPtr->Msg, sizeof(CanadarmAppRobotCommand_t)))
+            if (CanadarmAppVerifyCmdLength(&SBBufPtr->Msg, sizeof(CanadarmAppCmd_t)))
             {
+                OS_printf("Updating robot command!!!!!!!!!!!!!!!");
                 updateRobotCommand((CanadarmAppCmd_t *)SBBufPtr);
             }
 
@@ -403,6 +409,8 @@ int32 CanadarmAppNoop(const CanadarmAppNoopCmd_t *Msg)
 
 int32 updateRobotCommand(const CanadarmAppCmd_t *Msg)
 {
+                OS_printf("Updating robot command inside......");
+
    for(int i = 0; i < 7; ++i)
       CanadarmAppData.FlightGoal.goal.joints[i] = 0.0;
    
@@ -430,7 +438,7 @@ int32 updateRobotCommand(const CanadarmAppCmd_t *Msg)
      } break;       
    }
 
-
+    updated_command = true;
 
     CFE_EVS_SendEvent(CANADARM_APP_COMMANDMODE_INF_EID, CFE_EVS_EventType_INFORMATION, "canadarm app: Received command %s",
                       CANADARM_APP_VERSION);
@@ -444,10 +452,13 @@ void HighRateControLoop(void) {
     // 1. Publish the twist to State in rosfsw (it is like sending a command to the robot)
     // (we should use another name, telemetry is not supposed to command anything)
 
-    // if (CanadarmAppData.square_counter%1000 == 0)    
+    if (updated_command)    
     {
+                    OS_printf("SENDING FLIGHT GOAL COMMAND!!!!!!!!!!");
+
     CFE_SB_TimeStampMsg(&CanadarmAppData.FlightGoal.TlmHeader.Msg);
-    CFE_SB_TransmitMsg(&CanadarmAppData.FlightGoal.TlmHeader.Msg, true);    
+    CFE_SB_TransmitMsg(&CanadarmAppData.FlightGoal.TlmHeader.Msg, true);
+    updated_command = false;    
     }
 
  
