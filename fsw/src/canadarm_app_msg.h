@@ -55,7 +55,7 @@ typedef struct
 typedef struct
 {
    CFE_MSG_CommandHeader_t CmdHeader;
-   int pose_id;
+   uint8 pose_id;
 } CanadarmAppCmd_t;
 
 /*
